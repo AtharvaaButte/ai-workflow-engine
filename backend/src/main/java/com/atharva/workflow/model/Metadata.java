@@ -1,4 +1,4 @@
-package model;
+package com.atharva.workflow.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

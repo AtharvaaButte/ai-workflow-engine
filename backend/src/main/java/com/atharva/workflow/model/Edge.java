@@ -1,4 +1,4 @@
-package model;
+package com.atharva.workflow.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class Edge {
     private String from;
     private String to;
+    private String condition;
 }
