@@ -2,32 +2,40 @@ package com.atharva.workflow.controller;
 
 import com.atharva.workflow.dto.CreateWorkflowRequest;
 import com.atharva.workflow.model.Workflow;
+import com.atharva.workflow.service.WorkflowService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/workflows")
 public class WorkflowController {
-    private List<Workflow> workflows = new ArrayList<>();
+    WorkflowService workflowService;
+
+    @Autowired
+    public WorkflowController(WorkflowService workflowService) {
+        this.workflowService = workflowService;
+    }
+
     //    Creating workflow
     @PostMapping
     public ResponseEntity<String> createWorkflow(@RequestBody CreateWorkflowRequest request) {
-        System.out.println(request.toString());
-        Workflow workflow = new Workflow(
-                UUID.randomUUID(),
-                request.getMetadata(),
-                request.getNodes(),
-                request.getEdges()
-        );
-        workflows.add(workflow);
-        System.out.println(workflow.toString());
+        workflowService.createWorkflow(request);
         return ResponseEntity.ok().body("Workflow created successfully");
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Workflow> getWorkflow(@PathVariable UUID id) {
+        return workflowService.getWorkflow(id)
+                .map(workflow -> ResponseEntity.ok().body(workflow))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Workflow>> getWorkflows() {
+        return ResponseEntity.ok().body(workflowService.getWorkflows());
     }
 }

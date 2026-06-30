@@ -20,9 +20,11 @@ A workflow definition is a directed graph composed of structural `metadata`, an 
       "config": {}
     },
     {
-      "id": "ai_classifier_1",
-      "type": "ai_classifier",
+      "id": "ai_processor_1",
+      "type": "ai_processor",
       "config": {
+        "provider": "openai",
+        "task": "classification",
         "prompt": "Classify issue into billing or technical"
       }
     },
@@ -37,18 +39,24 @@ A workflow definition is a directed graph composed of structural `metadata`, an 
       "id": "send_email_1",
       "type": "send_email",
       "config": {
-        "to": "billing@company.com"
+        "to": "billing@company.com",
+        "subject": "New Billing Issue"
       }
+    },
+    {
+      "id": "response_1",
+      "type": "response",
+      "config": {}
     }
   ],
   "edges": [
     {
       "from": "http_trigger_1",
-      "to": "ai_classifier_1",
+      "to": "ai_processor_1",
       "condition": null
     },
     {
-      "from": "ai_classifier_1",
+      "from": "ai_processor_1",
       "to": "condition_1",
       "condition": null
     },
@@ -56,6 +64,16 @@ A workflow definition is a directed graph composed of structural `metadata`, an 
       "from": "condition_1",
       "to": "send_email_1",
       "condition": "billing"
+    },
+    {
+      "from": "condition_1",
+      "to": "response_1",
+      "condition": "technical"
+    },
+    {
+      "from": "send_email_1",
+      "to": "response_1",
+      "condition": null
     }
   ]
 }
