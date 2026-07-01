@@ -20,7 +20,7 @@ public class NodeValidator {
 
     public void validateNodes(List<Node> nodes) {
 
-//      1. Ensure the workflow contains at least one node
+    // 1. Ensure the workflow contains at least one node
         if (nodes == null || nodes.isEmpty()) {
              throw new WorkflowValidationException("No nodes were found");
         }
@@ -71,7 +71,6 @@ public class NodeValidator {
                     throw new WorkflowValidationException("Unhandled node type validation: " + node.getType());
             }
         }
-        System.out.println("Workflow validated successfully");
     }
 
     private void require(Node node, String key) {
