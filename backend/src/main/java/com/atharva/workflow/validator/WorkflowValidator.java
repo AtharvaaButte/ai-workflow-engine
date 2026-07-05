@@ -22,6 +22,7 @@
 
             Map<String, Node> nodeMap = workflow.getNodes().stream()
                     .collect(Collectors.toMap(Node::getId ,node -> node));
+
             edgeValidator.validatesEdges(workflow.getEdges(),nodeMap);
 
             graphValidator.validateGraph(workflow.getNodes(), workflow.getEdges());
