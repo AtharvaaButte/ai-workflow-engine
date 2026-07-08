@@ -20,11 +20,9 @@ public class GraphValidator {
 
         for (Map.Entry<String, List<String>> entry: nodeByTypes.entrySet()){
             String type = entry.getKey();
-            if (!type.equals("http_trigger") && !type.equals("response") && !type.equals("condition")){
-                remainingIds.addAll(entry.getValue());
+            if (!"http_trigger".equals(type) && !"response".equals(type) && !"condition".equals(type)){                remainingIds.addAll(entry.getValue());
             }
         }
-
 
         Map<String, List<Edge>> incomingMap = buildIncomingMap(edges);
         Map<String, List<Edge>> outgoingMap = buildOutgoingMap(edges);
@@ -35,6 +33,7 @@ public class GraphValidator {
 
         System.out.println("Http trigger node and response node validated");
 
+        detectCycleAndConnectivity(triggerIds.getFirst(),nodes,outgoingMap);
         validateBranchingRules(nodes,conditionIds, remainingIds, outgoingMap);
     }
 
@@ -122,6 +121,48 @@ public class GraphValidator {
         }
     }
 
+    private void detectCycleAndConnectivity(String triggerId, List<Node> nodes,  Map<String, List<Edge>> outgoingMap){
+        Set<String> visited = new HashSet<>();
+        Set<String> recursionStack = new HashSet<>();
+
+        if (dfsCycle(triggerId, outgoingMap, visited, recursionStack)){
+            throw new WorkflowValidationException("Invalid Workflow: Infinite loop/cycle detected!");
+        }
+
+        if (visited.size() != nodes.size()) {
+            List<String> unreachableNodes = new ArrayList<>();
+            for (Node node : nodes) {
+                 if (!visited.contains(node.getId())) {
+                    unreachableNodes.add(node.getId());
+                }
+            }
+            throw new WorkflowValidationException(
+                    "Graph Connectivity Error: The following nodes are completely cut off from the trigger: " + unreachableNodes
+            );
+        }
+    }
+
+    private boolean dfsCycle(String currentNodeId, Map<String, List<Edge>> outgoingMap, Set<String> visited, Set<String> recursionStack){
+        visited.add(currentNodeId);
+        recursionStack.add(currentNodeId);
+
+        List<Edge> outgoingEdges = outgoingMap.getOrDefault(currentNodeId, Collections.emptyList());
+
+        for (Edge edge: outgoingEdges ){
+            String nextNodeId = edge.getTo();
+            if (recursionStack.contains(nextNodeId)){
+                return true;
+            }
+            if (!visited.contains(nextNodeId)){
+                if (dfsCycle(nextNodeId,outgoingMap,visited,recursionStack)){
+                    return true;
+                }
+            }
+        }
+        recursionStack.remove(currentNodeId);
+        return false;
+    }
+
     private void validateBranchingRules(List<Node> nodes, List<String> conditionIds,List<String> remainingIds, Map<String, List<Edge>> outgoingMap){
 
         StringBuilder errorMsg = new StringBuilder();
@@ -158,4 +199,5 @@ public class GraphValidator {
             throw new WorkflowValidationException(errorMsg.toString());
         }
     }
+
 }
