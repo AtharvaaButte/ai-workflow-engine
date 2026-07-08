@@ -5,37 +5,44 @@ import com.atharva.workflow.model.Edge;
 import com.atharva.workflow.model.Node;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class GraphValidator {
     public void validateGraph(List<Node> nodes, List<Edge> edges){
 
-        Map<String, Integer> nodeTypesCount = countNodeTypes(nodes);
-        int triggerCount = nodeTypesCount.getOrDefault("http_trigger",0);
-        int responseCount = nodeTypesCount.getOrDefault("response",0);
+        Map<String, List<String>> nodeByTypes = groupNodeByTypes(nodes);
+        List<String> triggerIds= nodeByTypes.getOrDefault("http_trigger", Collections.emptyList());
+        List<String> responseIds= nodeByTypes.getOrDefault("response",Collections.emptyList());
+        List<String> conditionIds= nodeByTypes.getOrDefault("condition",Collections.emptyList());
+        List<String> remainingIds= new ArrayList<>();
+
+        for (Map.Entry<String, List<String>> entry: nodeByTypes.entrySet()){
+            String type = entry.getKey();
+            if (!type.equals("http_trigger") && !type.equals("response") && !type.equals("condition")){
+                remainingIds.addAll(entry.getValue());
+            }
+        }
+
 
         Map<String, List<Edge>> incomingMap = buildIncomingMap(edges);
         Map<String, List<Edge>> outgoingMap = buildOutgoingMap(edges);
 
 
-        validateTriggerRules(nodes, triggerCount, incomingMap);
-        validateResponseRules(nodes, responseCount, outgoingMap);
+        validateTriggerRules(nodes, triggerIds, incomingMap);
+        validateResponseRules(nodes, responseIds, outgoingMap);
 
         System.out.println("Http trigger node and response node validated");
 
-
+        validateBranchingRules(nodes,conditionIds, remainingIds, outgoingMap);
     }
 
-    private Map<String,Integer> countNodeTypes (List<Node> nodes){
+    private Map<String,List<String>> groupNodeByTypes (List<Node> nodes){
         return nodes.stream()
-                .filter(node -> "http_trigger".equals(node.getType()) || "response".equals(node.getType()))
                 .collect(Collectors.groupingBy(
                         Node::getType,
-                        Collectors.summingInt(node -> 1)
+                        Collectors.mapping(Node::getId, Collectors.toList())
                         )
                 );
     }
@@ -54,59 +61,44 @@ public class GraphValidator {
         ));
     }
 
-    private void validateTriggerRules(List<Node> nodes, int triggerCount, Map<String, List<Edge>> incomingMap) {
+    private void validateTriggerRules(List<Node> nodes, List<String> triggerIds, Map<String, List<Edge>> incomingMap) {
         // Rule 1: Must have exactly one starting entry point
-        if (triggerCount != 1) {
+        if (triggerIds.size() != 1) {
             throw new WorkflowValidationException(
-                    "Workflow must contain exactly 1 'http_trigger' entry point, but found: " + triggerCount
+                    "Workflow must contain exactly 1 'http_trigger' entry point, but found: " + triggerIds.size()
             );
         }
 
-        String triggerId  = null;
-
-        for (Node node : nodes){
-            if ("http_trigger".equals(node.getType())){
-                triggerId = node.getId();
-                break;
-            }
-        }
+        String triggerId = triggerIds.getFirst();
 
         // 2. Rule 2: No incoming edges allowed to the trigger node
         if (incomingMap.containsKey(triggerId)){
             List<Edge> illegalEdges = incomingMap.get(triggerId);
-            StringBuilder erroMsg = new StringBuilder();
-            erroMsg.append("Invalid Workflow: The 'http_trigger' node (ID: ")
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("Invalid Workflow: The 'http_trigger' node (ID: ")
                     .append(triggerId)
                     .append(") cannot have incoming edges. Found illegal connections: ");
 
             for (Edge edge : illegalEdges ){
-                erroMsg.append("[").append(edge.getFrom()).append(" -> ").append(edge.getTo()).append("]");
+                errorMsg.append("[").append(edge.getFrom()).append(" -> ").append(edge.getTo()).append("]");
             }
 
-            throw new WorkflowValidationException(erroMsg.toString());
+            throw new WorkflowValidationException(errorMsg.toString());
         }
     }
 
-    private void validateResponseRules(List<Node> nodes, int responseCount, Map<String, List<Edge>> outgoingMap) {
+    private void validateResponseRules(List<Node> nodes, List<String> responseIds, Map<String, List<Edge>> outgoingMap) {
 
         // Rule 1: Must have at least one exit point
-        if (responseCount == 0) {
+        if (responseIds.isEmpty()) {
             throw new WorkflowValidationException(
-                    "Workflow must contain at least 1 'response' exit point, but found: " + responseCount
+                    "Workflow must contain at least 1 'response' exit point, but found: " + 0
             );
         }
 
-        List<String> responseIds  = new ArrayList<>();
-
-        for (Node node : nodes){
-            if ("response".equals(node.getType())){
-                responseIds.add(node.getId());
-            }
-        }
-
         // 2. Rule 2: No outgoing edges allowed to the response node
-        StringBuilder erroMsg = new StringBuilder();
-        erroMsg.append("Invalid Workflow Matrix: The following terminal 'response' steps have illegal outgoing connections:");
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("Invalid Workflow : The following terminal 'response' steps have illegal outgoing connections:");
         boolean hasError = false;
 
         for (String responseId : responseIds){
@@ -114,19 +106,56 @@ public class GraphValidator {
             if (outgoingMap.containsKey(responseId)){
                 hasError = true;
                 List<Edge> illegalEdges = outgoingMap.get(responseId);
-                erroMsg.append("\n• Node ID [").append(responseId).append("]: Connected to -> ");
+                errorMsg.append("\n• Node ID [").append(responseId).append("]: Connected to -> ");
 
                 for (int i = 0;i < illegalEdges.size();i++){
-                   erroMsg.append("[").append(illegalEdges.get(i).getTo()).append("]");
+                   errorMsg.append("[").append(illegalEdges.get(i).getTo()).append("]");
                    if (i != illegalEdges.size()-1){
-                       erroMsg.append(", ");
+                       errorMsg.append(", ");
                    }
                 }
             }
         }
         if (hasError){
-            erroMsg.append("\nPlease remove all outgoing connections from terminal 'response' nodes.");
-            throw new WorkflowValidationException(erroMsg.toString());
+            errorMsg.append("\nPlease remove all outgoing connections from terminal 'response' nodes.");
+            throw new WorkflowValidationException(errorMsg.toString());
+        }
+    }
+
+    private void validateBranchingRules(List<Node> nodes, List<String> conditionIds,List<String> remainingIds, Map<String, List<Edge>> outgoingMap){
+
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append("Invalid Workflow: 'condition' nodes must split into at least 2 branching paths.");
+        boolean hasError = false;
+
+        for(String conditionId : conditionIds){
+           if (outgoingMap.getOrDefault(conditionId , Collections.emptyList()).size() <= 1){
+               hasError = true;
+                errorMsg.append("\n• Node ID [").append(conditionId).append("]: Has ").append(outgoingMap.getOrDefault(conditionId, Collections.emptyList()).size()).append(" outgoing connection. (Needs at least 2)");
+           }
+        }
+
+        if (hasError){
+            errorMsg.append("\nPlease ensure all condition nodes have branches for both true/false or multi-choice outcomes.");
+            throw new WorkflowValidationException(errorMsg.toString());
+        }
+
+        errorMsg = new StringBuilder();
+        errorMsg.append("Invalid Workflow: Standard action nodes must have exactly 1 outgoing connection sequential path");
+        hasError = false;
+
+        for(String nodeId : remainingIds){
+            if (outgoingMap.getOrDefault(nodeId,Collections.emptyList()).size() != 1){
+                hasError = true;
+                errorMsg.append("\n• Node ID [")
+                        .append(nodeId).append("]: Has ")
+                        .append(outgoingMap.getOrDefault(nodeId,Collections.emptyList()).size())
+                        .append(" outgoing connection. (Needs exactly 1)");
+            }
+        }
+        if (hasError){
+            errorMsg.append("\nPlease ensure standard action steps only link forward to a single next step.");
+            throw new WorkflowValidationException(errorMsg.toString());
         }
     }
 }
