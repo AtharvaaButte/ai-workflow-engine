@@ -1,5 +1,6 @@
-package com.atharva.workflow.engine.handler;
+package com.atharva.workflow.engine;
 
+import com.atharva.workflow.engine.handler.NodeHandler;
 import com.atharva.workflow.exception.NodeHandlerNotFoundException;
 import org.springframework.stereotype.Component;
 
