@@ -23,8 +23,8 @@ public class AIProcessorHandler implements NodeHandler{
         String inputKey = (String) config.get("inputKey");
         String outputKey = (String) config.get("outputKey");
 
+        System.out.println(inputKey+ "  "+outputKey);
         String textToProcess = (String) context.getVariable(inputKey);
-
         if (textToProcess == null){
             throw new NodeExecutionException("Execution failed: Context variable '" + inputKey + "' was not found!");
         }

@@ -10,11 +10,13 @@ public class HttpTriggerHandler implements NodeHandler{
     public void execute(Node node, WorkflowContext context) {
         System.out.println("Executing Trigger Node: " + node.getId());
         Object payload = context.getVariable("request_payload");
+/*
         if (payload == null){
             throw new WorkflowExecutionException(
                "Execution Error at node [" + node.getId() + "]: Incoming request payload is empty!"
             );
         }
+*/
         context.setVariable(node.getId()+"_status", ExecutionStatus.FIRED.name());
     }
 }

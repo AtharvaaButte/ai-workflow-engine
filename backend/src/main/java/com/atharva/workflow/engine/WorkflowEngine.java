@@ -16,7 +16,6 @@ public class WorkflowEngine {
     private final NodeHandlerRegistry registry;
     private final RoutingService routingService;
 
-
     public WorkflowEngine(NodeHandlerRegistry registry, RoutingService routingService) {
         this.registry = registry;
         this.routingService = routingService;
