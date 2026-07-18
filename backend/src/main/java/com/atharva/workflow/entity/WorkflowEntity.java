@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -19,5 +20,11 @@ public class WorkflowEntity {
 
     @Embedded
     private Metadata metadata;
+
+    @OneToMany( mappedBy = "workflow",cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<NodeEntity> nodes;
+
+    @OneToMany(mappedBy = "workflow", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<EdgeEntity> edges;
 
 }
