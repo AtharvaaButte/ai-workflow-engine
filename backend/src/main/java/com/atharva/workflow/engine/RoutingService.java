@@ -24,27 +24,27 @@ public class RoutingService {
         }
 
         // Logic Route B: Handling the Traffic Cop ("condition" block)
-        return resolveNextNodeId(currentNode,context,outgoingMap);
+        return evaluateConditionRouting(currentNode,context, outgoingMap.get(currentNode.getId()));
 
     }
 
     private String evaluateConditionRouting(Node conditionNode, WorkflowContext context, List<Edge> edges) {
         Map<String, Object> config = conditionNode.getConfig();
 
-        if (config == null || !config.containsKey("routingKey")) {
-            throw new WorkflowExecutionException("Condition Node [" + conditionNode.getId() + "] missing 'routingKey' configuration!");
+        if (config == null || !config.containsKey("field")) {
+            throw new WorkflowExecutionException("Condition Node [" + conditionNode.getId() + "] missing 'field' configuration!");
         }
 
-        String routingKey = (String) config.get("routingKey");
+        String field = (String) config.get("field");
 
-        String actualValue = (String) context.getVariable(routingKey);
+        String runtimeValue = (String) context.getVariable(field);
 
-        if (actualValue == null) {
-            throw new WorkflowExecutionException("Routing failure: Context variable '" + routingKey + "' is missing at condition check!");
+        if (runtimeValue == null) {
+            throw new WorkflowExecutionException("Routing failure: Context variable '" + runtimeValue + "' is missing at condition check!");
         }
 
         for (Edge edge: edges){
-            if (actualValue.equalsIgnoreCase(edge.getCondition())){
+            if (runtimeValue.equalsIgnoreCase(edge.getCondition())){
                 return edge.getTo();
             }
         }

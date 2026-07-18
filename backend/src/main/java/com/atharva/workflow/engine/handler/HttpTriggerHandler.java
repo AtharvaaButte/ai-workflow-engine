@@ -4,7 +4,9 @@ import com.atharva.workflow.engine.WorkflowContext;
 import com.atharva.workflow.exception.WorkflowExecutionException;
 import com.atharva.workflow.model.ExecutionStatus;
 import com.atharva.workflow.model.Node;
+import org.springframework.stereotype.Component;
 
+@Component("http_trigger")
 public class HttpTriggerHandler implements NodeHandler{
     @Override
     public void execute(Node node, WorkflowContext context) {
