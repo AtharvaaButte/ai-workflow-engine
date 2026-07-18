@@ -28,35 +28,33 @@ public class EdgeValidator {
 
     private  void validateSelfLoop(Edge edge){
         // Prevent self-loops (a node connecting directly to itself)
-        String fromId = edge.getFrom();
-        String toId = edge.getTo();
 
-        if (edge.getFrom().equals(edge.getTo())){
-            throw new WorkflowValidationException("Node '" + edge.getFrom() + "' cannot link to itself (self-loop detected)");
+        if (edge.getSource().equals(edge.getTarget())){
+            throw new WorkflowValidationException("Node '" + edge.getSource() + "' cannot link to itself (self-loop detected)");
         }
     }
 
     private void validateNodeExistence( Edge edge, Map<String, Node> nodeMap){
         // Verify that the source node exists
-        if (!nodeMap.containsKey(edge.getFrom())){
-            throw new WorkflowValidationException("Source node '" + edge.getFrom() + "' does not exist");
+        if (!nodeMap.containsKey(edge.getSource())){
+            throw new WorkflowValidationException("Source node '" + edge.getSource() + "' does not exist");
         }
 
         //  Verify that the target node exists
-        if (!nodeMap.containsKey(edge.getTo())){
-            throw new WorkflowValidationException("Target node '" + edge.getTo() + "' does not exist");
+        if (!nodeMap.containsKey(edge.getTarget())){
+            throw new WorkflowValidationException("Target node '" + edge.getTarget() + "' does not exist");
         }
     }
 
     private void validateConditionalRules(Edge edge, Map<String, Node> nodeMap, Map<String, Set<String>> conditionRoutingMap){
 
         // Validate conditional routing for "condition" nodes
-        Node sourceNode = nodeMap.get(edge.getFrom());
+        Node sourceNode = nodeMap.get(edge.getSource());
         if("condition".equals(sourceNode.getType())){
             // Conditional edges must specify a match value
             if (edge.getCondition() == null || edge.getCondition().trim().isEmpty() ){
                 throw new WorkflowValidationException(
-                        "Edge from condition node '" + edge.getFrom() + "' to '" + edge.getTo() + "' must specify a routing value");
+                        "Edge from condition node '" + edge.getSource() + "' to '" + edge.getTarget() + "' must specify a routing value");
             }
 
             // Prevent duplicate routing values on the same condition node
@@ -66,7 +64,7 @@ public class EdgeValidator {
             // For any other node type, the condition parameter should be null
             if (edge.getCondition() != null) {
                 throw new WorkflowValidationException(
-                        "Node type '" + sourceNode.getType() + "' (ID: " + edge.getFrom() + ") cannot have conditional outgoing edges"
+                        "Node type '" + sourceNode.getType() + "' (ID: " + edge.getSource() + ") cannot have conditional outgoing edges"
                 );
             }
         }
@@ -76,21 +74,21 @@ public class EdgeValidator {
         Set<String> seenEdges = new HashSet<>();
 
         for (Edge edge: edges){
-            String edgeSignature = edge.getFrom() + " -> " + edge.getTo();
+            String edgeSignature = edge.getSource() + " -> " + edge.getTarget();
             if (!seenEdges.add(edgeSignature)){
                 throw new WorkflowValidationException(
                         "Invalid Workflow: Duplicate connection detected from [" +
-                                edge.getFrom() + "] to [" + edge.getTo() + "]."
+                                edge.getSource() + "] to [" + edge.getTarget() + "]."
                 );
             }
         }
     }
 
     private void validateUniqueConditionBranches (Map<String, Set<String>> conditionRoutingMap, Edge edge){
-        Set<String> routes = conditionRoutingMap.computeIfAbsent(edge.getFrom(), k -> new HashSet<>());
+        Set<String> routes = conditionRoutingMap.computeIfAbsent(edge.getSource(), k -> new HashSet<>());
 
         if (!routes.add(edge.getCondition())){
-            throw new WorkflowValidationException("Duplicate routing path detected for node: " + edge.getFrom());
+            throw new WorkflowValidationException("Duplicate routing path detected for node: " + edge.getSource());
         }
     }
 

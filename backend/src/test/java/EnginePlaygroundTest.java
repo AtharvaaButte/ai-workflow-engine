@@ -57,8 +57,8 @@ public class EnginePlaygroundTest {
 
         // Connect Block A -> Block B using a graph line connection edge
         Edge edge1 = new Edge();
-        edge1.setFrom("node_trigger");
-        edge1.setTo("node_ai");
+        edge1.setSource("node_trigger");
+        edge1.setTarget("node_ai");
         edges.add(edge1);
 
         dummyWorkflow.setNodes(nodes);

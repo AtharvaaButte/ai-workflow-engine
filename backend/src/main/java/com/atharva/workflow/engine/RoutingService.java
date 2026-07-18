@@ -20,7 +20,7 @@ public class RoutingService {
 
         // Logic Route A: Handling a standard action block
         if (!"condition".equalsIgnoreCase(currentNode.getType())){
-            return edges.get(0).getTo();
+            return edges.get(0).getTarget();
         }
 
         // Logic Route B: Handling the Traffic Cop ("condition" block)
@@ -45,12 +45,12 @@ public class RoutingService {
 
         for (Edge edge: edges){
             if (runtimeValue.equalsIgnoreCase(edge.getCondition())){
-                return edge.getTo();
+                return edge.getTarget();
             }
         }
         for (Edge edge : edges) {
             if ("else".equalsIgnoreCase(edge.getCondition()) || edge.getCondition() == null) {
-                return edge.getTo();
+                return edge.getTarget();
             }
         }
 

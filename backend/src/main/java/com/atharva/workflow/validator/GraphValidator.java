@@ -48,14 +48,14 @@ public class GraphValidator {
 
     private Map<String, List<Edge>> buildOutgoingMap(List<Edge> edges){
         return edges.stream().collect(Collectors.groupingBy(
-                Edge::getFrom,
+                Edge::getSource,
                 Collectors.toList()
         ));
     }
 
     private Map<String,List<Edge>> buildIncomingMap(List<Edge> edges){
         return edges.stream().collect(Collectors.groupingBy(
-                Edge::getTo,
+                Edge::getTarget,
                 Collectors.toList()
         ));
     }
@@ -79,7 +79,7 @@ public class GraphValidator {
                     .append(") cannot have incoming edges. Found illegal connections: ");
 
             for (Edge edge : illegalEdges ){
-                errorMsg.append("[").append(edge.getFrom()).append(" -> ").append(edge.getTo()).append("]");
+                errorMsg.append("[").append(edge.getSource()).append(" -> ").append(edge.getTarget()).append("]");
             }
 
             throw new WorkflowValidationException(errorMsg.toString());
@@ -108,7 +108,7 @@ public class GraphValidator {
                 errorMsg.append("\n• Node ID [").append(responseId).append("]: Connected to -> ");
 
                 for (int i = 0;i < illegalEdges.size();i++){
-                   errorMsg.append("[").append(illegalEdges.get(i).getTo()).append("]");
+                   errorMsg.append("[").append(illegalEdges.get(i).getTarget()).append("]");
                    if (i != illegalEdges.size()-1){
                        errorMsg.append(", ");
                    }
@@ -149,7 +149,7 @@ public class GraphValidator {
         List<Edge> outgoingEdges = outgoingMap.getOrDefault(currentNodeId, Collections.emptyList());
 
         for (Edge edge: outgoingEdges ){
-            String nextNodeId = edge.getTo();
+            String nextNodeId = edge.getTarget();
             if (recursionStack.contains(nextNodeId)){
                 return true;
             }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Edge {
-    private String from;
-    private String to;
+    private String source;
+    private String target;
     private String condition;
 }

@@ -54,7 +54,7 @@ public class WorkflowEngine {
 
     private Map<String, List<Edge>> buildOutgoingMap(List<Edge> edges){
         return edges.stream().collect(Collectors.groupingBy(
-                Edge::getFrom,
+                Edge::getSource,
                 Collectors.toList()
         ));
     }
