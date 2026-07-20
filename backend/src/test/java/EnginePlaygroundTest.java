@@ -5,6 +5,7 @@ import com.atharva.workflow.engine.WorkflowEngine;
 import com.atharva.workflow.engine.handler.AIProcessorHandler;
 import com.atharva.workflow.engine.handler.HttpTriggerHandler;
 import com.atharva.workflow.engine.handler.NodeHandler;
+import com.atharva.workflow.engine.handler.ResponseHandler; // 🌟 1. Import your new handler
 import com.atharva.workflow.model.Edge;
 import com.atharva.workflow.model.Node;
 import com.atharva.workflow.model.Workflow;
@@ -19,11 +20,13 @@ public class EnginePlaygroundTest {
         // 1. Manually create the building blocks (Strategies)
         HttpTriggerHandler triggerHandler = new HttpTriggerHandler();
         AIProcessorHandler aiHandler = new AIProcessorHandler();
+        ResponseHandler responseHandler = new ResponseHandler(); // 🌟 2. Instantiate new handler
 
         // 2. Manually register them into our clipboard warehouse map
         Map<String, NodeHandler> manualMap = new HashMap<>();
         manualMap.put("http_trigger", triggerHandler);
         manualMap.put("ai_processor", aiHandler);
+        manualMap.put("response", responseHandler); // 🌟 3. Register your response handler
 
         NodeHandlerRegistry registry = new NodeHandlerRegistry(manualMap);
         RoutingService routingService = new RoutingService();
@@ -50,16 +53,33 @@ public class EnginePlaygroundTest {
         aiNode.setType("ai_processor");
 
         Map<String, Object> aiConfig = new HashMap<>();
-        aiConfig.put("inputKey", "raw_message");       // Read from here
-        aiConfig.put("outputKey", "derived_category"); // Save to here
+        aiConfig.put("inputKey", "raw_message");
+        aiConfig.put("outputKey", "derived_category");
         aiNode.setConfig(aiConfig);
         nodes.add(aiNode);
 
-        // Connect Block A -> Block B using a graph line connection edge
+        // 🌟 4. Block C: The New Response Block
+        Node responseNode = new Node();
+        responseNode.setId("node_response");
+        responseNode.setType("response");
+
+        Map<String, Object> responseConfig = new HashMap<>();
+        // Configure it to extract exactly what we want in our final API payload
+        responseConfig.put("responseKeys", "derived_category, node_ai_status");
+        responseNode.setConfig(responseConfig);
+        nodes.add(responseNode);
+
+        // Connect Block A -> Block B
         Edge edge1 = new Edge();
         edge1.setSource("node_trigger");
         edge1.setTarget("node_ai");
         edges.add(edge1);
+
+        // 🌟 5. Connect Block B -> Block C
+        Edge edge2 = new Edge();
+        edge2.setSource("node_ai");
+        edge2.setTarget("node_response");
+        edges.add(edge2);
 
         dummyWorkflow.setNodes(nodes);
         dummyWorkflow.setEdges(edges);
@@ -76,6 +96,14 @@ public class EnginePlaygroundTest {
             System.out.println("\n=== VERIFYING RESULTS IN BACKPACK ===");
             System.out.println("Result for 'derived_category': " + context.getVariable("derived_category"));
             System.out.println("Status of AI Node: " + context.getVariable("node_ai_status"));
+
+            // 🌟 6. Verify that the response handler successfully extracted the target keys into the output payload
+            System.out.println("\n=== VERIFYING FINAL OUTPUT ENGINE PACKET ===");
+            if (context.hasVariable("FINAL_ENGINE_OUTPUT")) {
+                System.out.println("FINAL_ENGINE_OUTPUT: " + context.getVariable("FINAL_ENGINE_OUTPUT"));
+            } else {
+                System.out.println(" Error: FINAL_ENGINE_OUTPUT key missing inside context mapping tracker.");
+            }
 
         } catch (Exception e) {
             System.err.println("Test Failed: " + e.getMessage());
