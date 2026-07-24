@@ -2,10 +2,12 @@ package com.atharva.workflow.engine.handler;
 
 import com.atharva.workflow.engine.WorkflowContext;
 import com.atharva.workflow.model.Node;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Component("response")
 public class ResponseHandler implements NodeHandler{
     @Override
     public void execute(Node node, WorkflowContext context) {
