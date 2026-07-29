@@ -1,12 +1,12 @@
+import { BrowserRouter } from 'react-router-dom';
+import { AppRoutes } from './routes/AppRoutes';
 
-function App() {
-
+export function App() {
   return (
-    <div>
-      Ai workflow
-    </div>
-    
-  )
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
