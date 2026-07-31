@@ -1,9 +1,9 @@
-import React from 'react'
 
-export default function SettingsPage() {
-  return (
-    <div>
-      SettingsPage
-    </div>
-  )
-}
+export const SettingsPage = () => (
+  <div className="card">
+    <h2>Settings</h2>
+    <p>Application configurations placeholder.</p>
+  </div>
+);
+
+export default SettingsPage;

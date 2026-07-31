@@ -1,9 +1,10 @@
-import React from 'react'
 
-export default function ExecutionDetailPage() {
-  return (
-    <div>
+export const ExecutionDetailPage = () => (
+  <div>
       ExecutionDetailPage
     </div>
-  )
-}
+);
+
+export default ExecutionDetailPage
+
+

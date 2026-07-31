@@ -1,9 +1,8 @@
-import React from 'react'
 
-export default function EditWorkflowPage() {
-  return (
+export const EditWorkflowPage = () => (
     <div>
       EditWorkflowPage
     </div>
   )
-}
+
+export default EditWorkflowPage;

@@ -1,9 +1,8 @@
-import React from 'react'
 
-export default function CreateWorkflowPage() {
-  return (
+export const CreateWorkflowPage = ()=> (
     <div>
       CreateWorkflowPage
     </div>
   )
-}
+
+  export default CreateWorkflowPage;

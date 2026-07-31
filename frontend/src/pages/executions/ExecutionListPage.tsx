@@ -1,9 +1,9 @@
-import React from 'react'
 
-export default function ExecutionListPage() {
-  return (
-    <div>
-      ExecutionListPage
-    </div>
-  )
-}
+export const ExecutionListPage = () => (
+  <div className="card">
+    <h2>Executions</h2>
+    <p>Execution logs and execution status table placeholder.</p>
+  </div>
+);
+
+export default ExecutionListPage;

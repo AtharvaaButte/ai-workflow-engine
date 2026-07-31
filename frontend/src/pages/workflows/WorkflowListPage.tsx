@@ -1,9 +1,9 @@
-import React from 'react'
 
-export default function WorkflowListPage() {
-  return (
-    <div>
-      WorkflowListPage 
-    </div>
-  )
-}
+export const WorkflowListPage = () => (
+  <div className="card">
+    <h2>Workflows</h2>
+    <p>Workflow management table placeholder.</p>
+  </div>
+);
+
+export default WorkflowListPage;
