@@ -1,7 +1,11 @@
+
 export type ExecutionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export type ExecutionRequest = Record<string, unknown>;
 
+/**
+ * Matches backend ExecutionResponseDto
+ */
 export interface Execution {
   id: string;
   workflowId: string;
@@ -11,7 +15,7 @@ export interface Execution {
   completedAt?: string;
   executionTimeMs?: number;
   inputs: ExecutionRequest;
-  outputs?: Record<string, unknown>; 
+  outputs?: Record<string, unknown>;
   errorMessage?: string;
   logs?: string[];
 }
