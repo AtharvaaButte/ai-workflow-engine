@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface PageContainerProps {
@@ -29,3 +28,5 @@ export const PageContainer: React.FC<PageContainerProps> = ({
     </div>
   );
 };
+
+export default PageContainer;
