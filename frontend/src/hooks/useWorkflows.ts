@@ -18,7 +18,6 @@ export const useWorkflows = () => {
     setError(null);
     try {
       const data = await workflowService.getAll();
-      console.log(data);
       
       setWorkflows(data);
     } catch (err) {

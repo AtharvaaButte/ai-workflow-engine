@@ -1,40 +1,35 @@
-import { Routes, Route } from 'react-router-dom';
-import { ROUTES } from '../constants/routes';
-import { DashboardLayout } from '../layouts/DashboardLayout';
 
-import DashboardPage from '../pages/dashboard/dashboardPage';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import DashboardLayout from '../layouts/DashboardLayout';
+import DashboardPage from '../pages/dashboard/DashboardPage';
 import WorkflowListPage from '../pages/workflows/WorkflowListPage';
 import WorkflowDetailPage from '../pages/workflows/WorkflowDetailPage';
-import CreateWorkflowPage from '../pages/workflows/CreateWorkflowPage';
-import EditWorkflowPage from '../pages/workflows/EditWorkflowPage';
-import ExecutionListPage from '../pages/executions/ExecutionListPage';
-import ExecutionDetailPage from '../pages/executions/ExecutionDetailPage';
-import SettingsPage from '../pages/settings/SettingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import ExecutionListPage from '../pages/executions/ExecutionListPage';
+import SettingsPage from '../pages/settings/SettingsPage';
+import WorkflowFormPage from '../pages/workflows/WorkflowFormPage';
 
-export const AppRoutes = () => {
+export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* All pages inside DashboardLayout share the same Header & Sidebar */}
-      <Route element={<DashboardLayout />}>
-        <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+     <Route path="/" element={<DashboardLayout />}>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         
         {/* Workflow Routes */}
-        <Route path={ROUTES.WORKFLOWS.LIST} element={<WorkflowListPage />} />
-        <Route path={ROUTES.WORKFLOWS.CREATE} element={<CreateWorkflowPage />} />
-        <Route path={ROUTES.WORKFLOWS.DETAILS()} element={<WorkflowDetailPage />} />
-        <Route path={ROUTES.WORKFLOWS.EDIT()} element={<EditWorkflowPage />} />
-        
-        {/* Execution Routes */}
-        <Route path={ROUTES.EXECUTIONS.LIST} element={<ExecutionListPage />} />
-        <Route path={ROUTES.EXECUTIONS.DETAILS()} element={<ExecutionDetailPage />} />
-        
-        {/* System Routes */}
-        <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-      </Route>
+        <Route path="workflows" element={<WorkflowListPage />} />
+        <Route path="workflows/new" element={<WorkflowFormPage />} />
+        <Route path="workflows/:id" element={<WorkflowDetailPage />} />
+        <Route path="workflows/:id/edit" element={<WorkflowFormPage />} />
 
-      {/* Standalone Route (Outside Dashboard Layout) */}
-      <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />
+        {/* Execution & Settings Routes */}
+        <Route path="executions" element={<ExecutionListPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };
+
+export default AppRoutes;
