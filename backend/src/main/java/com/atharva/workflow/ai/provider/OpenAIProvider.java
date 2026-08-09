@@ -1,6 +1,5 @@
 package com.atharva.workflow.ai.provider;
 
-import com.atharva.workflow.ai.AIProvider;
 import com.atharva.workflow.ai.dto.AIRequest;
 import com.atharva.workflow.ai.dto.AIResponse;
 import org.springframework.http.MediaType;
