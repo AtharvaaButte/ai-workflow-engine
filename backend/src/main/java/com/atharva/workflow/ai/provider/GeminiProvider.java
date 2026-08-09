@@ -43,12 +43,14 @@ public class GeminiProvider implements AIProvider {
     private AIResponse makeRealGeminiCall(AIRequest request, String apiKey) {
         Map<String, Object> requestBody = Map.of(
                 "systemInstruction", Map.of(
-                        "parts", List.of(Map.of("text", request.systemPrompt())),
-                        "contents", List.of(Map.of("parts", List.of(Map.of("text", request.userPrompt())))),
+                        "parts", List.of(Map.of("text", request.systemPrompt()))
+                        ),
+                        "contents", List.of(
+                                Map.of("parts", List.of(Map.of("text", request.userPrompt())))
+                        ),
                         "generationConfig", Map.of(
                                 "temperature", request.temperature()
                         )
-                )
         );
 
         Map<?, ?> responseMap = restClient.post()
