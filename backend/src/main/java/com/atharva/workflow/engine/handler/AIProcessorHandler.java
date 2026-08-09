@@ -1,5 +1,7 @@
 package com.atharva.workflow.engine.handler;
 
+import com.atharva.workflow.ai.AIService;
+import com.atharva.workflow.ai.dto.AIResponse;
 import com.atharva.workflow.engine.WorkflowContext;
 import com.atharva.workflow.exception.NodeExecutionException;
 import com.atharva.workflow.model.ExecutionStatus;
@@ -10,6 +12,13 @@ import java.util.Map;
 
 @Component("ai_processor")
 public class AIProcessorHandler implements NodeHandler{
+
+    private final AIService aiService;
+
+    public AIProcessorHandler(AIService aiService) {
+        this.aiService = aiService;
+    }
+
     @Override
     public void execute(Node node, WorkflowContext context) {
         System.out.println("Executing AI Processor Node: " + node.getId());
@@ -23,21 +32,23 @@ public class AIProcessorHandler implements NodeHandler{
         String inputKey = (String) config.get("inputKey");
         String outputKey = (String) config.get("outputKey");
 
-        System.out.println(inputKey+ "  "+outputKey);
         String textToProcess = (String) context.getVariable(inputKey);
+
         if (textToProcess == null){
             throw new NodeExecutionException("Execution failed: Context variable '" + inputKey + "' was not found!");
         }
-        String simulatedResult = "simulatedResult";
-        String lowerCaseText = textToProcess.toLowerCase();
 
-        if (lowerCaseText.contains("payment") || lowerCaseText.contains("charge") || lowerCaseText.contains("bill")) {
-            simulatedResult = "billing";
-        }
+        String provider = (String) config.getOrDefault("provider", "openai");
+        String systemPrompt = (String) config.getOrDefault("prompt", "Classify or process the input text.");
+        String apiKey = (String) config.get("apiKey");
 
-        context.setVariable(outputKey, simulatedResult);
+        AIResponse aiResponse = aiService.process(provider,systemPrompt,textToProcess,apiKey);
+
+        context.setVariable(outputKey,aiResponse.outputText());
 
         context.setVariable(node.getId()+ "_status", ExecutionStatus.COMPLETED.name());
-        System.out.println("AI Processing finished: " + outputKey + " = " + simulatedResult);
+        System.out.println("AI Node [" + node.getId() + "] processed text via provider [" +
+                aiResponse.providerName() + "] and mapped result '" +
+                aiResponse.outputText() + "' to key '" + outputKey + "'");
     }
 }
