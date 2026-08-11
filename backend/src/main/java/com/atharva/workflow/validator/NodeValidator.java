@@ -59,7 +59,7 @@ public class NodeValidator {
                     break;
 
                 case "send_email":
-                    require(node, "to");
+//                    require(node, "to");
                     require(node, "subject");
                     break;
 

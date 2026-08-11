@@ -54,7 +54,8 @@ public class GeminiProvider implements AIProvider {
         );
 
         Map<?, ?> responseMap = restClient.post()
-                .uri("/models/gemini-1.5-flash:generateContent?key=" + apiKey)
+                .uri("/models/gemini-2.5-flash:generateContent")
+                .header("x-goog-api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
