@@ -1,81 +1,78 @@
 
-import  { useEffect } from 'react';
+import  { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '../../components/layout/PageContainer';
 import { Button } from '../../components/ui/Button';
-import { Table, type Column } from '../../components/ui/Table';
 import { Loader } from '../../components/ui/Loader';
-import { useWorkflows } from '../../hooks/useWorkflows';
 import type { Workflow } from '../../types/workflow';
-
+import type { Execution } from '../../types';
+import { workflowService } from '../../services/workflowService';
+import executionService from '../../services/executionService';
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { workflows, isLoading, fetchWorkflows } = useWorkflows();
+
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [executions, setExecutions] = useState<Execution[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchWorkflows();
-  }, [fetchWorkflows]);
+    let isMounted = true;
 
-  // Summary Metrics (Will map to GET /api/v1/dashboard in Phase 6)
-  const stats = [
-    { label: 'Total Workflows', value: workflows.length || 0, color: 'var(--primary, #3b82f6)' },
-    { label: 'Active Workflows', value: workflows.filter((w) => w.metadata?.status === 'ACTIVE').length || 0, color: '#10b981' },
-    { label: 'Total Executions', value: 142, color: '#8b5cf6' },
-    { label: 'Failed Executions', value: 3, color: '#ef4444' },
-  ];
+    const fetchDashboardStats = async () => {
+      setIsLoading(true);
+      try {
+        const [wfData, execData] = await Promise.all([
+          workflowService.getAll().catch(() => []),
+          executionService.getAll().catch(() => []),
+        ]);
 
-  const recentColumns: Column<Workflow>[] = [
-    {
-      header: 'Name',
-      key: 'id',
-      render: (w) => (
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-          {w.metadata?.name || 'Unnamed Workflow'}
-        </span>
-      ),
-    },
-    {
-      header: 'Status',
-      key: 'id',
-      render: (w) => (
-        <span className={`status-badge status-${(w.metadata?.status || 'DRAFT').toLowerCase()}`}>
-          {w.metadata?.status || 'DRAFT'}
-        </span>
-      ),
-    },
-    {
-      header: 'Nodes',
-      key: 'id',
-      render: (w) => `${w.nodes?.length || 0} nodes`,
-    },
-    {
-      header: 'Actions',
-      key: 'id',
-      render: (w) => (
-        <Button variant="secondary" size="sm" onClick={() => navigate(`/workflows/${w.id}`)}>
-          View
-        </Button>
-      ),
-    },
-  ];
+        if (isMounted) {
+          setWorkflows(wfData);
+          setExecutions(execData);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const totalWorkflows = workflows.length;
+  const totalExecutions = executions.length;
+  const successfulExecutions = executions.filter(
+    (e) => e.status === 'SUCCESS' || e.status === 'COMPLETED'
+  ).length;
+  
+  const successRate = totalExecutions > 0 
+    ? Math.round((successfulExecutions / totalExecutions) * 100) 
+    : 100;
+
+  if (isLoading) {
+    return (
+      <PageContainer title="Dashboard Overview">
+        <Loader label="Calculating metrics from database..." />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer
-      title="Dashboard"
-      description="System overview and workflow runtime execution metrics."
+      title="Dashboard Overview"
+      description="Real-time system statistics and automated pipeline metrics."
       actions={
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <Button variant="secondary" onClick={() => navigate('/workflows')}>
-            View All Workflows
-          </Button>
-
-          <Button variant="primary" onClick={() => navigate('/workflows/new')}>
-            + Create Workflow
-          </Button>
-        </div>
+        <Button variant="primary" onClick={() => navigate('/workflows/new')}>
+          + Create Workflow
+        </Button>
       }
     >
-      {/* 1. Summary Cards Section */}
+      {/* Metric Cards Grid */}
       <div
         style={{
           display: 'grid',
@@ -84,34 +81,42 @@ export default function DashboardPage() {
           marginBottom: '2rem',
         }}
       >
-        {stats.map((stat, idx) => (
-          <div
-            key={idx}
-            className="card"
-            style={{
-              padding: '1.25rem',
-              borderRadius: '8px',
-              borderLeft: `4px solid ${stat.color}`,
-            }}
-          >
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted, #9ca3af)' }}>
-              {stat.label}
-            </p>
-            <h2 style={{ margin: '0.5rem 0 0 0', fontSize: '1.875rem', fontWeight: 700 }}>
-              {stat.value}
-            </h2>
-          </div>
-        ))}
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted, #64748b)' }}>Total Workflows</span>
+          <h2 style={{ fontSize: '2rem', margin: '0.25rem 0 0 0', color: 'var(--primary, #3b82f6)' }}>
+            {totalWorkflows}
+          </h2>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted, #64748b)' }}>Total Executions</span>
+          <h2 style={{ fontSize: '2rem', margin: '0.25rem 0 0 0', color: '#10b981' }}>
+            {totalExecutions}
+          </h2>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted, #64748b)' }}>Success Rate</span>
+          <h2 style={{ fontSize: '2rem', margin: '0.25rem 0 0 0', color: successRate >= 90 ? '#10b981' : '#f59e0b' }}>
+            {successRate}%
+          </h2>
+        </div>
       </div>
 
-      {/* 2. Recent Workflows Table Section */}
+      {/* Quick Actions Card */}
       <div className="card" style={{ padding: '1.5rem' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Recent Workflows</h3>
-        {isLoading ? (
-          <Loader label="Loading recent workflows..." />
-        ) : (
-          <Table columns={recentColumns} data={workflows.slice(0, 5)} />
-        )}
+        <h3 style={{ marginTop: 0 }}>Quick Management</h3>
+        <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '0.9rem' }}>
+          Navigate quickly to manage workflows or monitor step execution runtimes.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+          <Button variant="secondary" onClick={() => navigate('/workflows')}>
+            Manage Workflows
+          </Button>
+          <Button variant="secondary" onClick={() => navigate('/executions')}>
+            View Execution Logs
+          </Button>
+        </div>
       </div>
     </PageContainer>
   );
