@@ -9,6 +9,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import ExecutionListPage from '../pages/executions/ExecutionListPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import WorkflowFormPage from '../pages/workflows/WorkflowFormPage';
+import ExecutionDetailPage from '../pages/executions/ExecutionDetailPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -26,6 +27,9 @@ export const AppRoutes: React.FC = () => {
         {/* Execution & Settings Routes */}
         <Route path="executions" element={<ExecutionListPage />} />
         <Route path="settings" element={<SettingsPage />} />
+
+        <Route path="executions" element={<ExecutionListPage />} />
+        <Route path="executions/:id" element={<ExecutionDetailPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
