@@ -33,54 +33,48 @@ export default function WorkflowListPage() {
   };
 
   const columns: Column<Workflow>[] = [
-    {
-      header: 'ID',
-      key: 'id',
-      render: (w) => <code style={{ fontSize: '0.8rem' }}>{w.id.substring(0, 8)}...</code>,
-    },
-    {
-      header: 'Name',
-      key: 'id',
-      render: (w) => <strong>{w.metadata?.name || 'Unnamed Workflow'}</strong>,
-    },
-    {
-      header: 'Description',
-      key: 'id',
-      render: (w) => w.metadata?.description || '-',
-    },
-    {
-      header: 'Nodes',
-      key: 'id',
-      render: (w) => `${w.nodes?.length || 0} nodes`,
-    },
-    {
-      header: 'Status',
-      key: 'id',
-      render: (w) => (
-        <span className={`status-badge status-${(w.metadata?.status || 'DRAFT').toLowerCase()}`}>
-          {w.metadata?.status || 'DRAFT'}
-        </span>
-      ),
-    },
-    {
-      header: 'Actions',
-      key: 'id',
-      render: (w) => (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="secondary" size="sm" onClick={() => navigate(`/workflows/${w.id}`)}>
-            View
-          </Button>
-
-          <Button variant="secondary" size="sm" onClick={() => navigate(`/workflows/${w.id}/edit`)}>
-            Edit
-          </Button>
-
-          <Button variant="danger" size="sm" onClick={() => setWorkflowToDelete(w)}>
-            Delete
-          </Button>
-        </div>
-      ),
-    },
+  {
+    header: 'ID',
+    key: 'id',
+    render: (w) => <code style={{ fontSize: '0.8rem' }}>{w.id.substring(0, 8)}...</code>,
+  },
+  {
+    header: 'Name',
+    key: 'id',
+    render: (w) => <strong>{w.metadata?.name || 'Unnamed Workflow'}</strong>,
+  },
+  {
+    header: 'Version',
+    key: 'id',
+    render: (w) => <span>v{w.metadata?.version || 1}</span>,
+  },
+  {
+    header: 'Description',
+    key: 'id',
+    render: (w) => w.metadata?.description || '-',
+  },
+  {
+    header: 'Nodes',
+    key: 'id',
+    render: (w) => `${w.nodes?.length || 0} nodes`,
+  },
+  {
+    header: 'Actions',
+    key: 'id',
+    render: (w) => (
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <Button variant="secondary" size="sm" onClick={() => navigate(`/workflows/${w.id}`)}>
+          View
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => navigate(`/workflows/${w.id}/edit`)}>
+          Edit
+        </Button>
+        <Button variant="danger" size="sm" onClick={() => setWorkflowToDelete(w)}>
+          Delete
+        </Button>
+      </div>
+    ),
+  },
   ];
 
   return (

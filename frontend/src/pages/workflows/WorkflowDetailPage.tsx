@@ -1,9 +1,10 @@
 
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageContainer } from '../../components/layout/PageContainer';
 import { Button } from '../../components/ui/Button';
 import { Loader } from '../../components/ui/Loader';
+import { WorkflowCanvas } from '../../components/workflow/WorkflowCanvas';
 import { workflowService } from '../../services/workflowService';
 import { useToast } from '../../hooks/useToast';
 import type { Workflow } from '../../types/workflow';
@@ -73,64 +74,34 @@ export default function WorkflowDetailPage() {
         </div>
       }
     >
-      {/* 1. Metadata Info Grid */}
+      {/* 1. Overview */}
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
         <h3 style={{ marginTop: 0 }}>Configuration Overview</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Description</span>
-            <p style={{ margin: '0.25rem 0 0 0', fontWeight: 500 }}>{workflow.metadata?.description || '-'}</p>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Name</span>
+            <p style={{ margin: '0.25rem 0 0 0', fontWeight: 600 }}>{workflow.metadata?.name || '-'}</p>
           </div>
           <div>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Version</span>
-            <p style={{ margin: '0.25rem 0 0 0', fontWeight: 500 }}>v{workflow.metadata?.version || 1}</p>
+            <p style={{ margin: '0.25rem 0 0 0', fontWeight: 600 }}>v{workflow.metadata?.version || 1}</p>
           </div>
           <div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Status</span>
-            <p style={{ margin: '0.25rem 0 0 0' }}>
-              <span className={`status-badge status-${(workflow.metadata?.status || 'DRAFT').toLowerCase()}`}>
-                {workflow.metadata?.status || 'DRAFT'}
-              </span>
-            </p>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Description</span>
+            <p style={{ margin: '0.25rem 0 0 0', fontWeight: 500 }}>{workflow.metadata?.description || '-'}</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Nodes Summary */}
+      {/* 2. Visual Canvas Inspection View */}
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-        <h3 style={{ marginTop: 0 }}>Pipeline Nodes ({workflow.nodes?.length || 0})</h3>
-        {(!workflow.nodes || workflow.nodes.length === 0) ? (
-          <p style={{ color: 'var(--text-muted)' }}>No nodes configured in this pipeline.</p>
-        ) : (
-          <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-            {workflow.nodes.map((node) => (
-              <li key={node.id} style={{ marginBottom: '0.5rem' }}>
-                <strong>{node.id}</strong> — <code style={{ color: 'var(--primary)' }}>{node.type}</code>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* 3. Edges Summary */}
-      <div className="card" style={{ padding: '1.5rem' }}>
-        <h3 style={{ marginTop: 0 }}>Graph Connections ({workflow.edges?.length || 0})</h3>
-        {(!workflow.edges || workflow.edges.length === 0) ? (
-          <p style={{ color: 'var(--text-muted)' }}>No node connections configured.</p>
-        ) : (
-          <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-            {workflow.edges.map((edge, idx) => (
-              <li key={idx} style={{ marginBottom: '0.5rem' }}>
-                <code>{edge.source}</code> &rarr; <code>{edge.target}</code>
-                {edge.condition && (
-                  <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)' }}>
-                    (Condition: {edge.condition})
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Visual Graph View</h3>
+        <WorkflowCanvas
+          nodes={workflow.nodes || []}
+          edges={workflow.edges || []}
+          onChange={() => {}} // No-op since read-only
+          isReadOnly={true}
+        />
       </div>
     </PageContainer>
   );
