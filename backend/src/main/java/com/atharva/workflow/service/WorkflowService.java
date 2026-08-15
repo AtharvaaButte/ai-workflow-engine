@@ -2,10 +2,7 @@ package com.atharva.workflow.service;
 
 import com.atharva.workflow.dto.CreateWorkflowRequest;
 import com.atharva.workflow.dto.UpdateWorkflowRequest;
-import com.atharva.workflow.entity.EdgeEntity;
-import com.atharva.workflow.entity.Metadata;
-import com.atharva.workflow.entity.NodeEntity;
-import com.atharva.workflow.entity.WorkflowEntity;
+import com.atharva.workflow.entity.*;
 import com.atharva.workflow.model.Edge;
 import com.atharva.workflow.model.Node;
 import com.atharva.workflow.model.Workflow;
@@ -28,7 +25,7 @@ public class WorkflowService {
     private final WorkflowRepository workflowRepository;
 
     @Transactional
-    public WorkflowEntity createWorkflow(CreateWorkflowRequest request) {
+    public WorkflowEntity createWorkflow(CreateWorkflowRequest request, UserEntity currentUser) {
         Workflow workflow = new Workflow(
                 UUID.randomUUID(),
                 request.getMetadata(),
@@ -50,6 +47,7 @@ public class WorkflowService {
             metadata.setDescription(request.getMetadata().getDescription());
             workflowEntity.setMetadata(metadata);
         }
+        workflowEntity.setUser(currentUser);
 
         // Process children using isolated mapper methods
         workflowEntity.setNodes(mapToNodeEntities(workflow.getNodes(), workflowEntity));
@@ -58,31 +56,32 @@ public class WorkflowService {
         return workflowRepository.save(workflowEntity);
     }
 
-    public Optional<Workflow> getWorkflow(UUID id) {
-        return workflowRepository.findById(id)
+    public Optional<Workflow> getWorkflow(UUID id, UserEntity currentUser) {
+        return workflowRepository.findByIdAndUser(id,currentUser)
                 .map(this::mapToWorkflow);
     }
 
     @Transactional(readOnly = true)
-    public List<Workflow> getWorkflows() {
-        return workflowRepository.findAll()
+    public List<Workflow> getWorkflows(UserEntity currentUser) {
+        return workflowRepository.findAllByUser(currentUser)
                 .stream()
                 .map(this::mapToWorkflow)
                 .collect(Collectors.toList());
     }
     
     @Transactional
-    public boolean deleteWorkflow(UUID id) {
-        if (workflowRepository.existsById(id)){
-            workflowRepository.deleteById(id);
-            return true;
-        }
-        return false;
+    public boolean deleteWorkflow(UUID id, UserEntity currentUser) {
+        return workflowRepository.findByIdAndUser(id, currentUser)
+                .map(workflow -> {
+                    workflowRepository.delete(workflow);
+                    return true;
+                })
+                .orElse(false);
     }
 
     @Transactional
-    public Optional<Workflow> updateWorkflow(UUID id, UpdateWorkflowRequest request) {
-        return workflowRepository.findById(id).map(existingEntity->{
+    public Optional<Workflow> updateWorkflow(UUID id, UpdateWorkflowRequest request, UserEntity currentUser) {
+        return workflowRepository.findByIdAndUser(id, currentUser).map(existingEntity->{
             Workflow updatedWorkflowDomain = new Workflow(
                     id,
                     request.getMetadata(),
