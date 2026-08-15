@@ -1,4 +1,4 @@
-package com.atharva.workflow.service;
+package com.atharva.workflow.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
