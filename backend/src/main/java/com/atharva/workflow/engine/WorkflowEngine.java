@@ -1,6 +1,8 @@
 package com.atharva.workflow.engine;
 
 import com.atharva.workflow.engine.handler.NodeHandler;
+import com.atharva.workflow.entity.ExecutionEntity;
+import com.atharva.workflow.entity.NodeExecutionLogEntity;
 import com.atharva.workflow.exception.WorkflowExecutionException;
 import com.atharva.workflow.model.Edge;
 import com.atharva.workflow.model.Node;
@@ -23,18 +25,30 @@ public class WorkflowEngine {
 
     public void execute(Workflow workflow, WorkflowContext context){
         System.out.println("Starting workflow execution: " + workflow.getId());
-        Map<String, List<Edge>> outgoingMap = buildOutgoingMap(workflow.getEdges());
 
+        Map<String, List<Edge>> outgoingMap = buildOutgoingMap(workflow.getEdges());
         Node currentNode = findTriggerNode(workflow.getNodes());
 
         //  THE CORE EXECUTION LOOP
 
         while (currentNode != null){
+            long stepStartTime = System.currentTimeMillis();
             System.out.println("Processing loop current step pointer: " + currentNode.getId());
 
             try {
                 NodeHandler handler = registry.getHandler(currentNode.getType());
                 handler.execute(currentNode, context);
+
+                long stepDuration = System.currentTimeMillis() - stepStartTime;
+
+                // Record SUCCESS step log in context
+                context.logNodeStep(
+                        currentNode.getId(),
+                        currentNode.getType(),
+                        NodeExecutionLogEntity.NodeStatus.SUCCESS,
+                        null,
+                        stepDuration
+                );
 
                 String nextNodeId = routingService.resolveNextNodeId(currentNode, context, outgoingMap);
 
@@ -46,6 +60,14 @@ public class WorkflowEngine {
                 }
 
             } catch (Exception e) {
+                long stepDuration = System.currentTimeMillis() - stepStartTime;
+                context.logNodeStep(
+                        currentNode.getId(),
+                        currentNode.getType(),
+                        NodeExecutionLogEntity.NodeStatus.FAILED,
+                        e.getMessage(),
+                        stepDuration
+                );
                 System.err.println("Critical failure during workflow run at node [" + currentNode.getId() + "]");
                 throw new WorkflowExecutionException("Workflow failed at node [" + currentNode.getId() + "]: " + e.getMessage(), e);            }
         }
@@ -77,4 +99,5 @@ public class WorkflowEngine {
                 .findFirst()
                 .orElseThrow(() -> new WorkflowExecutionException("Broken Link: Node pointer ID [" + id + "] not found in graph definition!"));
     }
+
 }
