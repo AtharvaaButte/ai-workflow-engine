@@ -10,9 +10,12 @@ import ExecutionListPage from '../pages/executions/ExecutionListPage';
 import SettingsPage from '../pages/settings/SettingsPage';
 import WorkflowFormPage from '../pages/workflows/WorkflowFormPage';
 import ExecutionDetailPage from '../pages/executions/ExecutionDetailPage';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 
 export const AppRoutes: React.FC = () => {
   return (
+    <ErrorBoundary>
+
     <Routes>
      <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
@@ -31,8 +34,11 @@ export const AppRoutes: React.FC = () => {
         <Route path="executions" element={<ExecutionListPage />} />
         <Route path="executions/:id" element={<ExecutionDetailPage />} />
       </Route>
+
+      {/* Catch-all 404 Route */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </ErrorBoundary>
   );
 };
 
