@@ -21,7 +21,8 @@ public class ExecutionEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+
+    @Column(name = "workflow", nullable = false)
     private UUID workflowId;
 
     private String workflowName;

@@ -2,6 +2,7 @@ package com.atharva.workflow.service;
 
 import com.atharva.workflow.dto.ExecutionDTOs.*;
 import com.atharva.workflow.entity.ExecutionEntity;
+import com.atharva.workflow.entity.UserEntity;
 import com.atharva.workflow.repository.ExecutionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,8 +18,8 @@ public class ExecutionService {
     private final ExecutionRepository executionRepository;
 
     @Transactional(readOnly = true)
-    public List<ExecutionSummaryResponse> getAllExecutions() {
-        return executionRepository.findAllByOrderByStartedAtDesc().stream()
+    public List<ExecutionSummaryResponse> getAllExecutions(UserEntity currentUser) {
+        return executionRepository.findAllByUserOrderByStartedAtDesc(currentUser).stream()
                 .map(e -> new ExecutionSummaryResponse(
                         e.getId(),
                         e.getWorkflowId(),
@@ -32,8 +33,8 @@ public class ExecutionService {
     }
 
     @Transactional(readOnly = true)
-    public ExecutionDetailResponse getExecutionById(UUID id) {
-        ExecutionEntity entity = executionRepository.findById(id)
+    public ExecutionDetailResponse getExecutionById(UUID id,UserEntity currentUser) {
+        ExecutionEntity entity = executionRepository.findByIdAndUser(id,currentUser)
                 .orElseThrow(() -> new RuntimeException("Execution not found: " + id));
 
         List<NodeExecutionLogResponse> logs = entity.getNodeLogs().stream()
