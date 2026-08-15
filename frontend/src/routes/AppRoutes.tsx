@@ -1,45 +1,48 @@
 
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from '../context/AuthProvider';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
+
 import DashboardLayout from '../layouts/DashboardLayout';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import WorkflowListPage from '../pages/workflows/WorkflowListPage';
 import WorkflowDetailPage from '../pages/workflows/WorkflowDetailPage';
-import NotFoundPage from '../pages/NotFoundPage';
-import ExecutionListPage from '../pages/executions/ExecutionListPage';
-import SettingsPage from '../pages/settings/SettingsPage';
 import WorkflowFormPage from '../pages/workflows/WorkflowFormPage';
+import ExecutionListPage from '../pages/executions/ExecutionListPage';
 import ExecutionDetailPage from '../pages/executions/ExecutionDetailPage';
-import { ErrorBoundary } from '../components/common/ErrorBoundary';
+import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 export const AppRoutes: React.FC = () => {
   return (
     <ErrorBoundary>
+      <AuthProvider>
+        <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-    <Routes>
-     <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        
-        {/* Workflow Routes */}
-        <Route path="workflows" element={<WorkflowListPage />} />
-        <Route path="workflows/new" element={<WorkflowFormPage />} />
-        <Route path="workflows/:id" element={<WorkflowDetailPage />} />
-        <Route path="workflows/:id/edit" element={<WorkflowFormPage />} />
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<DashboardLayout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="workflows" element={<WorkflowListPage />} />
+              <Route path="workflows/new" element={<WorkflowFormPage />} />
+              <Route path="workflows/:id" element={<WorkflowDetailPage />} />
+              <Route path="workflows/:id/edit" element={<WorkflowFormPage />} />
+              <Route path="executions" element={<ExecutionListPage />} />
+              <Route path="executions/:id" element={<ExecutionDetailPage />} />
+            </Route>
+          </Route>
 
-        {/* Execution & Settings Routes */}
-        <Route path="executions" element={<ExecutionListPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-
-        <Route path="executions" element={<ExecutionListPage />} />
-        <Route path="executions/:id" element={<ExecutionDetailPage />} />
-      </Route>
-
-      {/* Catch-all 404 Route */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+          {/* 404 Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </AuthProvider>
     </ErrorBoundary>
   );
-};
+}
 
 export default AppRoutes;
