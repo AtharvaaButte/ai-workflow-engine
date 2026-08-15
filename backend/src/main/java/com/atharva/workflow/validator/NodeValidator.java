@@ -42,32 +42,29 @@ public class NodeValidator {
             // 4. Validate configuration parameters based on the specific node type
             switch (node.getType()) {
                 case "http_trigger":
-                    // Fallback or setup configuration parameters if needed (e.g., path/method validation)
-                    // Leaving it open if config can be empty, or you can add specific key requirements:
-                    // require(node, "method");
                     break;
 
                 case "ai_processor":
                     require(node, "provider");
-                    require(node, "task");
                     require(node, "prompt");
+                    require(node, "apiKey");
                     break;
 
                 case "condition":
-                    // Matches the "field": "category" structural requirement from the JSON spec
                     require(node, "field");
                     break;
 
                 case "send_email":
-//                    require(node, "to");
+                    require(node, "apiKey");
                     require(node, "subject");
+                    require(node, "from");
                     break;
 
                 case "response":
+                    require(node, "responseKeys");
                     break;
 
                 default:
-                    // Defensive check just in case a type slips past the initial allowedTypes.contains() check
                     throw new WorkflowValidationException("Unhandled node type validation: " + node.getType());
             }
         }
@@ -75,7 +72,16 @@ public class NodeValidator {
 
     private void require(Node node, String key) {
         if (node.getConfig() == null || !node.getConfig().containsKey(key)) {
-            throw new WorkflowValidationException("'" + key + "' cannot be empty or null for node type '" + node.getType() + "'");
+            throw new WorkflowValidationException(
+                    "Missing required field '" + key + "' for node [" + node.getId() + "] of type '" + node.getType() + "'"
+            );
+        }
+
+        Object value = node.getConfig().get(key);
+        if (value == null || (value instanceof String str && str.trim().isEmpty())) {
+            throw new WorkflowValidationException(
+                    "Field '" + key + "' cannot be blank or null on node [" + node.getId() + "]"
+            );
         }
     }
 }
