@@ -22,8 +22,11 @@ public class AIService {
             System.out.println("[AIService] Routing request to provider bean: " + provider.getProviderName());
             AIResponse response = provider.generate(request);
 
-            if (response == null) {
+            if (response == null ) {
                 throw new NodeExecutionException("Provider [" + provider.getProviderName() + "] returned a null response object.");
+            }
+            if (!response.success()) {
+                throw new NodeExecutionException(response.errorMessage());
             }
             return response;
         } catch (NodeExecutionException e) {

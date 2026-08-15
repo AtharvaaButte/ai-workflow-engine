@@ -28,7 +28,7 @@ public class WorkflowExecutionController {
             @AuthenticationPrincipal UserEntity currentUser
     ) {
 
-        Map<String, Object> result = executionEngine.executeWorkflowFromDb(id,payload, currentUser);
+        Map<String, Object> result = executionEngine.runWorkflow(id,payload, currentUser);
         return ResponseEntity.ok(result);
     }
 

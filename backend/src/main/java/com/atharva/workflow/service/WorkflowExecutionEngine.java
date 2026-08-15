@@ -25,8 +25,7 @@ public class WorkflowExecutionEngine {
     private final WorkflowRepository workflowRepository;
     private final ExecutionRepository executionRepository;
 
-    @Transactional
-    public Map<String, Object> executeWorkflowFromDb(String workflowId, Map<String, Object> inputPayload, UserEntity currentUser){
+    public Map<String, Object> runWorkflow(String workflowId, Map<String, Object> inputPayload, UserEntity currentUser){
         long startTime = System.currentTimeMillis();
         System.out.println("Fetching workflow blueprint from DB: " + workflowId);
 
@@ -48,7 +47,7 @@ public class WorkflowExecutionEngine {
         executionModel.setNodes(mapToDomainNodes(entity.getNodes()));
         executionModel.setEdges(mapToDomainEdges(entity.getEdges()));
 
-        //        CREATE INITIAL RUNNING EXECUTION RECORD
+        // CREATE INITIAL RUNNING EXECUTION RECORD
         ExecutionEntity execution = ExecutionEntity.builder()
                 .workflowId(entity.getId())
                 .workflowName(entity.getMetadata().getName())
@@ -64,18 +63,23 @@ public class WorkflowExecutionEngine {
         }
 
         System.out.println("Launching workflow execution loop for: " + workflowId);
-        workflowEngine.execute(executionModel, context);
 
-        // Populate step-by-step logs from WorkflowContext
-        populateNodeLogsFromContext(execution, context);
+        try {
+            workflowEngine.execute(executionModel, context);
+            execution.setStatus(ExecutionEntity.ExecutionStatus.SUCCESS);
+        } catch (Exception ex) {
+            execution.setStatus(ExecutionEntity.ExecutionStatus.FAILED);
+            execution.setErrorMessage(ex.getMessage());
+            throw ex;
+        } finally {
+            execution.setCompletedAt(LocalDateTime.now());
+            execution.setDurationMs(System.currentTimeMillis() - startTime);
 
-        execution.setStatus(ExecutionEntity.ExecutionStatus.SUCCESS);
-        execution.setCompletedAt(LocalDateTime.now());
-        execution.setDurationMs(System.currentTimeMillis() - startTime);
+            populateNodeLogsFromContext(execution, context);
+            executionRepository.save(execution);
 
+        }
 
-        executionRepository.save(execution);
-        
         Object finalResponse = context.getVariable("FINAL_ENGINE_OUTPUT");
 
         if (finalResponse != null) {

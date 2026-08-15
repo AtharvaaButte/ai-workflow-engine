@@ -61,11 +61,13 @@ public class WorkflowEngine {
 
             } catch (Exception e) {
                 long stepDuration = System.currentTimeMillis() - stepStartTime;
+                String errorMessage = extractErrorMessage(e);
+
                 context.logNodeStep(
                         currentNode.getId(),
                         currentNode.getType(),
                         NodeExecutionLogEntity.NodeStatus.FAILED,
-                        e.getMessage(),
+                        errorMessage,
                         stepDuration
                 );
                 System.err.println("Critical failure during workflow run at node [" + currentNode.getId() + "]");
@@ -98,6 +100,19 @@ public class WorkflowEngine {
                 .filter(node -> node.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new WorkflowExecutionException("Broken Link: Node pointer ID [" + id + "] not found in graph definition!"));
+    }
+
+    private String extractErrorMessage(Throwable throwable) {
+        if (throwable == null) return "Unknown failure";
+        Throwable root = throwable;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String msg = root.getMessage();
+        if (msg != null && !msg.isBlank()) {
+            return msg;
+        }
+        return root.getClass().getSimpleName() + " (Null or unhandled exception in node execution)";
     }
 
 }
