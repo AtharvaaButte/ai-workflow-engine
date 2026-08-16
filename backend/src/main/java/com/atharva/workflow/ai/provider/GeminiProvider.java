@@ -2,8 +2,11 @@ package com.atharva.workflow.ai.provider;
 
 import com.atharva.workflow.ai.dto.AIRequest;
 import com.atharva.workflow.ai.dto.AIResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.Map;
 @Component("gemini")
 public class GeminiProvider implements AIProvider {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestClient restClient = RestClient.create("https://generativelanguage.googleapis.com/v1beta");
 
     @Override
@@ -34,9 +38,13 @@ public class GeminiProvider implements AIProvider {
 
         try {
             return makeRealGeminiCall(request, apiKey);
-        } catch (Exception e) {
-            System.err.println("[GeminiProvider] HTTP Call Failed: " + e.getMessage());
-            return AIResponse.failure("Gemini API Execution Failure: " + e.getMessage(), getProviderName());
+        } catch (HttpStatusCodeException e) {
+            String cleanMessage = extractGeminiError(e.getResponseBodyAsString(), e.getStatusCode().value());
+            System.err.println("[GeminiProvider] Clean API Error: " + cleanMessage);
+            return AIResponse.failure(cleanMessage, getProviderName());
+        } catch (Exception e){
+            System.err.println("[GeminiProvider] Unexpected Failure: " + e.getMessage());
+            return AIResponse.failure("Gemini invocation failed: " + e.getMessage(), getProviderName());
         }
     }
 
@@ -85,6 +93,28 @@ public class GeminiProvider implements AIProvider {
         String outputText = ((String) firstPart.get("text")).trim();
 
         return AIResponse.success(outputText, getProviderName());
+    }
+
+    private String extractGeminiError(String responseBody, int statusCode) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return "Gemini API failed with HTTP " + statusCode;
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            if (root.has("error")) {
+                JsonNode errorNode = root.get("error");
+                if (errorNode.isObject() && errorNode.has("message")) {
+                    return errorNode.get("message").asText();
+                } else if (errorNode.isTextual()) {
+                    return errorNode.asText();
+                }
+            }
+        } catch (Exception ignored) {
+            // Fallback if the body isn't JSON
+        }
+
+        return responseBody.replace("<EOL>", " ").trim();
     }
 
     private String maskKey(String key) {

@@ -2,147 +2,113 @@ package com.atharva.workflow.exception;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.context.request.WebRequest;
 
-import java.nio.file.AccessDeniedException;
-import java.security.SignatureException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    // 1. WORKFLOW & ENGINE DOMAIN EXCEPTIONS
+
     @ExceptionHandler(WorkflowValidationException.class)
-    public ResponseEntity<String> handleWorkflowValidationException(WorkflowValidationException exception) {
-        return ResponseEntity.badRequest().body(exception.getMessage());
+    public ResponseEntity<Map<String, Object>> handleWorkflowValidationException(WorkflowValidationException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(WorkflowExecutionException.class)
-    public ResponseEntity<Map<String, Object>> handleWorkflowExecutionException(WorkflowExecutionException exception){
-        Map<String, Object> response = new HashMap<>();
-        response.put("error", exception.getMessage());
-
+    public ResponseEntity<Map<String, Object>> handleWorkflowExecutionException(WorkflowExecutionException exception, HttpServletRequest request) {
+        String message = exception.getMessage();
         Throwable rootCause = exception.getCause();
-        if (rootCause != null) {
-            response.put("rootCauseType", rootCause.getClass().getSimpleName());
-            response.put("rootCauseMessage", rootCause.getMessage());
+        if (rootCause != null && rootCause.getMessage() != null && !rootCause.getMessage().isBlank()) {
+            message = rootCause.getMessage();
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request.getRequestURI(), null);
     }
 
     @ExceptionHandler(NodeHandlerNotFoundException.class)
-    public ResponseEntity<String> handleNodeHandlerNotFoundException(NodeHandlerNotFoundException exception) {
-        return ResponseEntity.badRequest().body(exception.getMessage());
+    public ResponseEntity<Map<String, Object>> handleNodeHandlerNotFoundException(NodeHandlerNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(NodeExecutionException.class)
-    public ResponseEntity<String> handleNodeExecutionException(NodeExecutionException exception){
-        return ResponseEntity.badRequest().body(exception.getMessage());
+    public ResponseEntity<Map<String, Object>> handleNodeExecutionException(NodeExecutionException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException exception){
-        return ResponseEntity.badRequest().body(exception.getMessage());
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.CONFLICT.value());
-        response.put("error", "Database constraint violation");
+    // 2. DATABASE & CONSTRAINT VIOLATIONS
 
-        // Checks for PostgreSQL NOT NULL or UNIQUE constraint violations
-        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
-            response.put("details", cve.getSQLException().getMessage());
-        } else {
-            response.put("details", ex.getMostSpecificCause().getMessage());
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String detailMessage = "Database constraint violation";
+        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve && cve.getSQLException() != null) {
+            detailMessage = cve.getSQLException().getMessage();
+        } else if (ex.getMostSpecificCause() != null) {
+            detailMessage = ex.getMostSpecificCause().getMessage();
         }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        return buildResponse(HttpStatus.CONFLICT, detailMessage, request.getRequestURI(), null);
     }
 
     @ExceptionHandler(PSQLException.class)
-    public ResponseEntity<Map<String, Object>> handlePSQLException(PSQLException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Database operation failed");
-        response.put("details", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<Map<String, Object>> handlePSQLException(PSQLException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Database operation failed: " + ex.getMessage(), request.getRequestURI(), null);
     }
 
-    // JWT & SECURITY EXCEPTIONS
+    // 3. JWT & SECURITY EXCEPTIONS
 
     @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<Map<String, Object>> handleJwtSignatureException(SignatureException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.UNAUTHORIZED.value());
-        response.put("error", "Invalid JWT signature: token was signed by another key or modified.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    public ResponseEntity<Map<String, Object>> handleJwtSignatureException(SignatureException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid JWT signature: token was signed by another key or modified.", request.getRequestURI(), null);
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<Map<String, Object>> handleExpiredJwtException(ExpiredJwtException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.UNAUTHORIZED.value());
-        response.put("error", "JWT token has expired. Please refresh your token.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    public ResponseEntity<Map<String, Object>> handleExpiredJwtException(ExpiredJwtException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "JWT token has expired. Please refresh your token.", request.getRequestURI(), null);
     }
 
     @ExceptionHandler(MalformedJwtException.class)
-    public ResponseEntity<Map<String, Object>> handleMalformedJwtException(MalformedJwtException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.UNAUTHORIZED.value());
-        response.put("error", "Malformed JWT token structure.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    public ResponseEntity<Map<String, Object>> handleMalformedJwtException(MalformedJwtException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Malformed JWT token structure.", request.getRequestURI(), null);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleBadCredentialsException(BadCredentialsException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.UNAUTHORIZED.value());
-        response.put("error", "Invalid email or password.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    public ResponseEntity<Map<String, Object>> handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password.", request.getRequestURI(), null);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.NOT_FOUND.value());
-        response.put("error", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public ResponseEntity<Map<String, Object>> handleUsernameNotFoundException(UsernameNotFoundException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.FORBIDDEN.value());
-        response.put("error", "Access denied: you do not have permission to perform this action.");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Access denied: you do not have permission to perform this action.", request.getRequestURI(), null);
     }
 
-    // DTO VALIDATION & GENERAL FALLBACKS
-
+    // 4. DTO VALIDATION & GENERAL FALLBACKS
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> fieldErrors = new HashMap<>();
 
         ex.getBindingResult().getAllErrors().forEach((error) -> {
@@ -151,32 +117,34 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldName, errorMessage);
         });
 
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Validation failed for request body");
-        response.put("fieldErrors", fieldErrors);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed for request body", request.getRequestURI(), fieldErrors);
     }
 
     @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<Map<String, Object>> handleNullPointerException(NullPointerException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("error", "Null reference encountered during execution");
-        response.put("details", ex.getMessage() != null ? ex.getMessage() : "Object reference not set to an instance");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public ResponseEntity<Map<String, Object>> handleNullPointerException(NullPointerException ex, HttpServletRequest request) {
+        String details = ex.getMessage() != null ? ex.getMessage() : "Object reference not set to an instance";
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Null reference encountered: " + details, request.getRequestURI(), null);
     }
 
-    // Global catch-all fallback handler
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, WebRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("error", "An unexpected internal server error occurred");
-        response.put("details", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, HttpServletRequest request) {
+        String details = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected internal error occurred: " + details, request.getRequestURI(), null);
+    }
+
+    // 5. HELPER METHOD: STANDARDIZED API ERROR RESPONSE BUILDER
+
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message, String path, Map<String, String> errors) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", status.value());
+        body.put("message", message);
+        body.put("timestamp", Instant.now().toString());
+        body.put("path", path);
+
+        if (errors != null && !errors.isEmpty()) {
+            body.put("errors", errors);
+        }
+
+        return ResponseEntity.status(status).body(body);
     }
 }

@@ -45,6 +45,8 @@ public class NodeValidator {
                     break;
 
                 case "ai_processor":
+                    require(node, "inputKey");
+                    require(node, "outputKey");
                     require(node, "provider");
                     require(node, "prompt");
                     require(node, "apiKey");
