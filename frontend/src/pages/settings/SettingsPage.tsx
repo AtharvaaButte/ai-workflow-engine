@@ -1,35 +1,12 @@
-// src/pages/SettingsPage.tsx
-
-import React, { useState } from 'react';
 import { PageContainer } from '../../components/layout/PageContainer';
-import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext'
-import { useToast } from '../../hooks/useToast';
-import { Sun, Moon, ShieldCheck, Key } from 'lucide-react';
+import { Sun, Moon, ShieldCheck } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { addToast } = useToast();
 
-  const [defaultOpenAiKey, setDefaultOpenAiKey] = useState<string>(() => {
-    return localStorage.getItem('default_openai_key') || '';
-  });
-  const [defaultResendKey, setDefaultResendKey] = useState<string>(() => {
-    return localStorage.getItem('default_resend_key') || '';
-  });
-
-  const handleSaveDefaults = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (defaultOpenAiKey) localStorage.setItem('default_openai_key', defaultOpenAiKey.trim());
-    else localStorage.removeItem('default_openai_key');
-
-    if (defaultResendKey) localStorage.setItem('default_resend_key', defaultResendKey.trim());
-    else localStorage.removeItem('default_resend_key');
-
-    addToast('success', 'Default credential preferences saved!');
-  };
 
   return (
     <PageContainer
