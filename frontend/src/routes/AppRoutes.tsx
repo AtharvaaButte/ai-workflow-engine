@@ -14,11 +14,15 @@ import ExecutionDetailPage from '../pages/executions/ExecutionDetailPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import ThemeProvider from '../context/ThemeContext';
+import SettingsPage from '../pages/settings/SettingsPage';
 
 export const AppRoutes: React.FC = () => {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <ThemeProvider>
+
         <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -34,12 +38,14 @@ export const AppRoutes: React.FC = () => {
               <Route path="workflows/:id/edit" element={<WorkflowFormPage />} />
               <Route path="executions" element={<ExecutionListPage />} />
               <Route path="executions/:id" element={<ExecutionDetailPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
 
           {/* 404 Route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

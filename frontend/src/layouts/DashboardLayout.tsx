@@ -1,16 +1,38 @@
+// src/components/layout/DashboardLayout.tsx
+
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 
 export const DashboardLayout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
 
   return (
     <div className="layout-container">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      {/* Mobile Backdrop Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar with dynamic open class */}
+      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+
+      {/* Main Layout Area */}
       <div className="layout-main">
-        <Header onToggleSidebar={() => setIsSidebarOpen(true)} />
+        <Header onToggleSidebar={toggleSidebar} />
         <main className="layout-content">
           <Outlet />
         </main>
@@ -19,4 +41,4 @@ export const DashboardLayout: React.FC = () => {
   );
 };
 
-export default DashboardLayout
+export default DashboardLayout;
