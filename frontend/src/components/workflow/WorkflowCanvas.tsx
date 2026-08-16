@@ -1,4 +1,3 @@
-// src/components/workflow/WorkflowCanvas.tsx
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import {
@@ -156,7 +155,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         const original = incomingNodes.find((n) => String(n.id) === rfNode.id);
         return {
           id: rfNode.id,
-          type: original?.type || 'custom_node',
+          type: original?.type,
           config: {
             ...(typeof original?.config === 'object' ? original.config : {}),
             position: { x: Math.round(rfNode.position.x), y: Math.round(rfNode.position.y) },
