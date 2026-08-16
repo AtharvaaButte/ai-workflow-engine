@@ -1,3 +1,6 @@
+
+export type NodeType = 'http_trigger' | 'ai_processor' | 'condition' | 'send_email' | 'response';
+
 export interface WorkflowMetadata {
   name: string;
   version: number;
@@ -6,8 +9,9 @@ export interface WorkflowMetadata {
 
 export interface WorkflowNode {
   id: string;
-  type: string;
+  type: NodeType;
   config: Record<string, unknown>;
+  position?: { x: number; y: number };
 }
 
 export interface WorkflowEdge {
@@ -21,6 +25,8 @@ export interface Workflow {
   metadata: WorkflowMetadata;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateWorkflowRequest {
@@ -29,4 +35,5 @@ export interface CreateWorkflowRequest {
   edges: WorkflowEdge[];
 }
 
+// Export UpdateWorkflowRequest
 export type UpdateWorkflowRequest = CreateWorkflowRequest;

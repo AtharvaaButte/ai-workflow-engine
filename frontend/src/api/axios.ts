@@ -1,4 +1,3 @@
-// src/api/axios.ts
 
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorResponse } from '../types/api';
